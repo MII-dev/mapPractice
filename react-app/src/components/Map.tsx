@@ -9,7 +9,8 @@ function Map() {
     { name: "Shop 1", position: [50.4501, 30.5244] },
     { name: "Shop 2", position: [50.46, 30.5234] },
     { name: "Shop 3", position: [50.4501, 30.53] },
-    { name: "Shop 4", position: [50.45, 30.52] },
+    { name: "Shop 4", position: [50.4521, 30.54] },
+    { name: "Shop 5", position: [50.45, 30.52] },
   ];
 
   return (
