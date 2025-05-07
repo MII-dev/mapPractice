@@ -1,6 +1,5 @@
 import { useState } from "react";
 import reactLogo from "./assets/react.svg";
-import "./App.css";
 import ListGroup from "./components/ListGroup";
 import Message from "./Message";
 import Weather from "./components/Weather";
@@ -8,8 +7,7 @@ import Map from "./components/Map";
 import "leaflet/dist/leaflet.css";
 
 function App() {
-  const [count, setCount] = useState(0);
-  let items = ["New York", "San Francisco", "Tokyo", "London", "Paris"];
+  const [SelectedRegion, setSelectedRegion] = useState<any>(null);
 
   /*return (
     <div>
@@ -22,7 +20,7 @@ function App() {
 
   return (
     <div>
-      <Map />
+      <Map onRegionSelect={setSelectedRegion} />
     </div>
   );
 }

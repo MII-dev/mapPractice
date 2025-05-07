@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -7,78 +7,66 @@ import {
   GeoJSON,
   useMapEvents,
   useMap,
+  Tooltip,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import ukrGeoJSon from "./UKR_adm1.json";
+import L from "leaflet";
 
-function Map() {
-  const position = [50.4501, 30.5234];
-  const [zoom, setZoom] = useState(6);
+type Props = {
+  onRegionSelect: (props: any) => void;
+};
 
-  const someShops = [
-    { name: "Shop 1", position: [50.4501, 30.5244] },
-    { name: "Shop 2", position: [50.46, 30.5234] },
-    { name: "Shop 3", position: [50.4501, 30.53] },
-    { name: "Shop 4", position: [50.4521, 30.54] },
-    { name: "Shop 5", position: [50.45, 30.52] },
-  ];
+function Map({ onRegionSelect }: Props) {
+  const position: [number, number] = [50.4501, 30.5234];
+  const bounds = L.geoJSON(ukrGeoJSon as any).getBounds();
 
-  const onEachRegion = (feature, layer) => {
+  const onEachFeature = (feature: any, layer: any) => {
     const regionName = feature.properties.NAME_1;
-    const map = useMap();
-    // layer.bindPopup("Область: " + regionName);
+
     layer.on({
-      mouseover: (e) => {
-        e.target.setStyle({ fillOpacity: 0.7 });
+      mouseover: (e: any) => {
+        e.target.setStyle({ fillOpacity: 0.4 });
       },
-      mouseout: (e) => {
+      mouseout: (e: any) => {
         e.target.setStyle({ fillOpacity: 0.1 });
       },
       click: () => {
-        const bounds = layer.getBounds();
-        map.fitBounds(bounds);
+        onRegionSelect(feature.properties);
       },
+    });
+
+    layer.bindTooltip(regionName, {
+      sticky: true,
     });
   };
-
-  function ZoomHandler({ setZoom }) {
-    useMapEvents({
-      zoomend: (e) => {
-        setZoom(e.target.getZoom());
-      },
-    });
-    return null;
-  }
 
   return (
     <div style={{ height: "100vh", width: "100vh" }}>
       <MapContainer
         center={position}
         zoom={6}
+        scrollWheelZoom={false}
+        dragging={false}
+        maxBounds={bounds}
+        maxBoundsViscosity={1.0}
+        zoomControl={false}
+        doubleClickZoom={false}
+        boxZoom={false}
+        keyboard={false}
+        touchZoom={false}
         style={{ height: "100%", width: "100%" }}
       >
-        <ZoomHandler setZoom={setZoom} />
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-        {zoom <= 9 && (
-          <GeoJSON
-            data={ukrGeoJSon}
-            style={{
-              color: "#3388ff",
-              weight: 2,
-              fillColor: "#3388ff",
-              fillOpacity: 0.1,
-            }}
-            onEachFeature={onEachRegion}
-          />
-        )}
-
-        {zoom >= 10 &&
-          someShops.map((shop, index) => (
-            <Marker key={index} position={shop.position}>
-              <Popup>{shop.name}</Popup>
-            </Marker>
-          ))}
+        <GeoJSON
+          data={ukrGeoJSon as any}
+          style={{
+            color: "#3388ff",
+            weight: 2,
+            fillColor: "#3388ff",
+            fillOpacity: 0.1,
+          }}
+          onEachFeature={onEachFeature}
+        />
       </MapContainer>
     </div>
   );
