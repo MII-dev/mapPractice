@@ -12,6 +12,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import ukrGeoJSon from "./UKR_adm1.json";
 import { SheedData } from "./GoogleSheetsAPI";
+import ScaleBar from "./ScaleBar";
 import L from "leaflet";
 
 type Props = {
@@ -30,6 +31,17 @@ function Map({ onRegionSelect }: Props) {
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
 
+  const levels = 6;
+
+  const step = Math.floor((maxValue - minValue) / levels);
+
+  const scale = Array.from(
+    { length: levels + 1 },
+    (_, i) => minValue + i * step
+  );
+
+  console.log(scale);
+
   console.log(values);
 
   const getColorIndex = (value: number, min: number, max: number): number => {
@@ -39,21 +51,27 @@ function Map({ onRegionSelect }: Props) {
   };
 
   const getColorByIndex = (index: number) => {
+    //   "#FBDB93",
+    // "#F4B5A7",
+    // "#ad5e78",
+    // "#BE5B50",
+    // "#8A2D3B",
+    // "#641B2E",
     switch (index) {
       case 1:
-        return "#00dd76";
+        return "#FBDB93";
       case 2:
-        return "#00b661";
+        return "#F4B5A7";
       case 3:
-        return "#008d4b";
+        return "#ad5e78";
       case 4:
-        return "#006335";
+        return "#BE5B50";
       case 5:
-        return "#003a1f";
+        return "#8A2D3B";
       case 6:
-        return "#001f10";
+        return "#641B2E";
       default:
-        return "#001f10";
+        return "#641B2E";
     }
   };
 
@@ -130,10 +148,11 @@ function Map({ onRegionSelect }: Props) {
               color: "black",
               weight: 2,
               // fillColor: "#3388ff",
-              fillOpacity: 0.7,
+              fillOpacity: 1,
             }}
             onEachFeature={onEachFeature}
           />
+          <ScaleBar scale={scale} />
         </MapContainer>
       </div>
     );
