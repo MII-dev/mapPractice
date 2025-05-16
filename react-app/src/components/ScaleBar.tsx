@@ -1,53 +1,53 @@
 import React from "react";
 
 const colors = [
-  "#FBDB93",
-  "#F4B5A7",
-  "#ad5e78",
-  "#BE5B50",
-  "#8A2D3B",
-  "#641B2E",
+  // "#FBDB93",
+  // "#F4B5A7",
+  // "#ad5e78",
+  // "#BE5B50",
+  // "#8A2D3B",
+  // "#641B2E",
+
+  "#f57a9a",
+  "#d66381",
+  "#b54a66",
+  "#96354e",
+  "#752137",
+  "#4f1121",
 ];
 
 const ScaleBar = ({ scale }) => {
   if (!scale || scale.length < 2) return null;
 
-  const segments = [];
-
-  for (let i = 0; i < scale.length - 1; i++) {
-    const from = scale[i];
-    const to = scale[i + 1];
-    const label = `${from} - ${to}`;
-    const color = colors[i % colors.length];
-
-    segments.push(
-      <div
-        key={i}
-        style={{
-          flex: 1,
-          backgroundColor: color,
-          textAlign: "center",
-          padding: "8px 0",
-          borderRight: i !== scale.length - 2 ? "1px solid #ccc" : "none",
-        }}
-      >
-        {label}
-      </div>
-    );
-  }
-
   return (
-    <div
-      style={{
-        display: "flex",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        overflow: "hidden",
-        fontFamily: "sans-serif",
-        fontSize: "14px",
-      }}
-    >
-      {segments}
+    <div style={{ fontFamily: "sans-serif", fontSize: "14px" }}>
+      {scale.slice(0, -1).map((from, i) => {
+        const to = scale[i + 1];
+        const color = colors[i % colors.length];
+        return (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "6px",
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: "14px",
+                height: "14px",
+                borderRadius: "50%",
+                backgroundColor: color,
+                marginRight: "8px",
+                flexShrink: 0,
+              }}
+            />
+            <span>{`${from} - ${to}`} тис.</span>
+          </div>
+        );
+      })}
     </div>
   );
 };

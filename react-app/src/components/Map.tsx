@@ -13,6 +13,7 @@ import "leaflet/dist/leaflet.css";
 import ukrGeoJSon from "./UKR_adm1.json";
 import { SheedData } from "./GoogleSheetsAPI";
 import ScaleBar from "./ScaleBar";
+import Sidebar from "./MapSideBar";
 import L from "leaflet";
 
 type Props = {
@@ -20,6 +21,7 @@ type Props = {
 };
 
 function Map({ onRegionSelect }: Props) {
+  const [selectedRegion, setSelectedRegion] = useState<any>(null);
   const position: [number, number] = [50.4501, 30.5234];
   const bounds = L.geoJSON(ukrGeoJSon as any).getBounds();
 
@@ -51,28 +53,47 @@ function Map({ onRegionSelect }: Props) {
   };
 
   const getColorByIndex = (index: number) => {
-    //   "#FBDB93",
-    // "#F4B5A7",
-    // "#ad5e78",
-    // "#BE5B50",
-    // "#8A2D3B",
-    // "#641B2E",
+    const colors = [
+      // "#FBDB93",
+      // "#F4B5A7",
+      // "#ad5e78",
+      // "#BE5B50",
+      // "#8A2D3B",
+      // "#641B2E",
+
+      "#f57a9a",
+      "#d66381",
+      "#b54a66",
+      "#96354e",
+      "#752137",
+      "#4f1121",
+    ];
+
     switch (index) {
       case 1:
-        return "#FBDB93";
+        return colors[0];
       case 2:
-        return "#F4B5A7";
+        return colors[1];
       case 3:
-        return "#ad5e78";
+        return colors[2];
       case 4:
-        return "#BE5B50";
+        return colors[3];
       case 5:
-        return "#8A2D3B";
+        return colors[4];
       case 6:
-        return "#641B2E";
+        return colors[5];
       default:
-        return "#641B2E";
+        return colors[5];
     }
+  };
+
+  const handeRegionClick = (props: any) => {
+    const regionData = sheetData.find((row) => row.region === props.NAME_1);
+    setSelectedRegion({
+      ...props,
+      total: regionData ? regionData.total : null,
+    });
+    onRegionSelect(props);
   };
 
   const onEachFeature = (feature: any, layer: any) => {
@@ -98,28 +119,36 @@ function Map({ onRegionSelect }: Props) {
       layer.setStyle({ fillColor: "red" });
     }
 
+    // const tooltipContent =
+    //   '<div class=""><h5 class="">' +
+    //   props.NAME_1 +
+    //   "</h5><div><strong>Загальна кількість:</strong> " +
+    //   total +
+    //   " </div><div><strong>Code:</strong> property </div><div><strong>Square:</strong> property </div><div><strong>Date:</strong> property </div></div>";
+
     const tooltipContent =
-      '<div class="custom-card-content"><h5>' +
+      '<div class="info-card"> <div class="info-header"> <span class="icon">🏠</span> <span class="region">' +
       props.NAME_1 +
-      "</h5><div><strong>Загальна кількість:</strong> " +
+      '</span> </div> <hr /> <div class="info-row"> <span>Ветеранів:</span> <strong>' +
       total +
-      " </div><div><strong>Code:</strong> property </div><div><strong>Square:</strong> property </div><div><strong>Date:</strong> property </div></div>";
+      '</strong> </div> <div class="info-row"> <span>Вакансій:</span> <strong>0</strong> </div> <div class="info-row"> <span>Рейтинг:</span> <span class="ratio-value"> <span class="circle good"></span> Property (XX%) </span> </div> </div>';
 
     layer.on({
       mouseover: (e: any) => {
         e.target.setStyle({ fillOpacity: 0.5 });
       },
       mouseout: (e: any) => {
-        e.target.setStyle({ fillOpacity: 0.7 });
+        e.target.setStyle({ fillOpacity: 1 });
       },
       click: () => {
-        onRegionSelect(feature.properties);
+        // onRegionSelect(feature.properties);
+        handeRegionClick(feature.properties);
       },
     });
 
     layer.bindTooltip(tooltipContent, {
       sticky: true,
-      className: "custom-card",
+      // className: "info-card",
     });
   };
 
@@ -127,7 +156,7 @@ function Map({ onRegionSelect }: Props) {
     return <div>Loading...</div>;
   } else {
     return (
-      <div style={{ height: "100vh", width: "100vh" }}>
+      <div style={{ position: "relative", height: "100vh", width: "100%" }}>
         <MapContainer
           center={position}
           zoom={6}
@@ -140,7 +169,7 @@ function Map({ onRegionSelect }: Props) {
           boxZoom={false}
           keyboard={false}
           touchZoom={false}
-          style={{ height: "100%", width: "100%" }}
+          style={{ height: "80%", width: "70%", background: "transparent" }}
         >
           <GeoJSON
             data={ukrGeoJSon as any}
@@ -152,8 +181,15 @@ function Map({ onRegionSelect }: Props) {
             }}
             onEachFeature={onEachFeature}
           />
-          <ScaleBar scale={scale} />
+          <div style={{ position: "absolute", bottom: "10%", left: "10%" }}>
+            <ScaleBar scale={scale} />
+          </div>
         </MapContainer>
+
+        <Sidebar
+          region={selectedRegion}
+          onClose={() => setSelectedRegion(null)}
+        />
       </div>
     );
   }
