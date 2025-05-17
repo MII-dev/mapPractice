@@ -6,27 +6,29 @@ type SidebarProps = {
   onClose: () => void;
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ region, onClose }: SidebarProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [localRegion, setLocalRegion] = useState<any>(null);
 
   useEffect(() => {
     if (region) {
-      setTimeout(() => setIsOpen(true), 10);
-    } else {
-      setIsOpen(false);
+      setLocalRegion(region);
+      setTimeout(() => setIsVisible(true), 10);
+    } else if (localRegion) {
+      setIsVisible(false);
     }
   }, [region]);
 
-  if (!region) return null;
+  if (!localRegion) return null;
 
   return (
-    <div className={`sidebar ${isOpen ? "open" : ""}`}>
+    <div className={`sidebar ${isVisible ? "open" : ""}`}>
       <button className="close-btn" onClick={onClose}>
         ×
       </button>
-      <h2>{region?.NAME_1}</h2>
+      <h2>{localRegion?.NAME_1}</h2>
       <p>
-        <strong>Ветеранів:</strong> {region?.total ?? "—"}
+        <strong>Ветеранів:</strong> {localRegion?.total ?? "—"}
       </p>
       <p>
         <strong>Вакансій:</strong> 0
