@@ -1,9 +1,4 @@
 {
-  "homepage": "https://MII-dev.github.io/mapPractice",
-  "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
-  },
   "dependencies": {
     "bootstrap": "^5.2.3"
   }
