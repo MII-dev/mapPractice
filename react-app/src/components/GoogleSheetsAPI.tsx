@@ -7,6 +7,13 @@ const RANGE = "Ветерани_по_регіонах_очищено!A1:B";
 export function SheedData() {
   const [data, setData] = useState<any[]>([]);
 
+  fetch("http://localhost:3001/api/regions")
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("Region data:", data);
+      // Об’єднуєш з GeoJSON тут
+    });
+
   useEffect(() => {
     fetch(
       "https://sheets.googleapis.com/v4/spreadsheets/" +
