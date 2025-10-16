@@ -16,44 +16,46 @@ import ScaleBar from "./ScaleBar";
 import Sidebar from "./MapSideBar";
 import L from "leaflet";
 
-// Тип пропсів
+// Тип пропсів для компонента Map (Props type for Map component)
 type Props = {
-  onRegionSelect: (props: any) => void;
+  onRegionSelect: (props: any) => void; // Колбек при виборі регіону (Callback when a region is selected)
 };
 
 function Map({ onRegionSelect }: Props) {
+  // Стан для збереження обраного регіону (State for storing selected region)
   const [selectedRegion, setSelectedRegion] = useState<any>(null);
 
+  // Початкова позиція карти — Київ (Initial map position — Kyiv)
   const position: [number, number] = [50.4501, 30.5234];
 
-  // Отримання географічних меж України з GeoJSON
+  // Межі карти визначаються за GeoJSON України (Map bounds based on Ukraine GeoJSON)
   const bounds = L.geoJSON(ukrGeoJSon as any).getBounds();
 
-  // Отримання даних з Google Sheets
+  // Завантаження даних із Google Sheets (Fetching data from Google Sheets)
   const sheetData = SheedData();
 
-  // Обчислення мінімального та максимального значення для побудови шкали
+  // Створення масиву числових значень для побудови шкали (Extract numeric values for color scale)
   const values = sheetData
     .map((row) => parseInt(row.total, 10))
     .filter(Number.isFinite);
+
+  // Знаходження мінімального та максимального значення (Find min and max value)
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
 
+  // Налаштування шкали кольорів (Color scale configuration)
   const levels = 6;
   const step = Math.floor((maxValue - minValue) / levels);
-  const scale = Array.from(
-    { length: levels + 1 },
-    (_, i) => minValue + i * step
-  );
+  const scale = Array.from({ length: levels + 1 }, (_, i) => minValue + i * step);
 
-  // Обчислення індексу кольору для значення
+  // Обчислення індексу кольору для значення (Calculate color index for a given value)
   const getColorIndex = (value: number, min: number, max: number): number => {
     if (isNaN(value)) return 1;
     const normalized = (value - min) / (max - min);
     return Math.ceil(normalized * levels);
   };
 
-  // Отримання кольору по індексу
+  // Отримання кольору за індексом (Get color by index)
   const getColorByIndex = (index: number) => {
     const colors = [
       "#FBDB93",
@@ -62,56 +64,28 @@ function Map({ onRegionSelect }: Props) {
       "#BE5B50",
       "#8A2D3B",
       "#641B2E",
-
-      // "#fca8be",
-      // "#db8a9f",
-      // "#b54a66",
-      // "#96354e",
-      // "#752137",
-      // "#4f1121",
     ];
-
-    // коричневий
-    // const colors = [
-    //   "#fff4e6",
-    //   "#ffe0bf",
-    //   "#ffcc99",
-    //   "#ffb877",
-    //   "#ffa366",
-    //   "#e68a4d",
-    // ];
-
-    //фіолетова
-    // const colors = [
-    //   "#f5e6ff",
-    //   "#e6ccff",
-    //   "#d9b3ff",
-    //   "#cc99ff",
-    //   "#bf80ff",
-    //   "#b366ff",
-    // ];
-
-    //синя
-    // const colors = [
-    //   "#e6f2ff",
-    //   "#cce6ff",
-    //   "#b3d9ff",
-    //   "#99ccff",
-    //   "#80
     return colors[Math.min(index - 1, colors.length - 1)];
   };
 
-  // Обробка кліку по регіону
+  // Обробник кліку на регіон (Handle region click)
   const handeRegionClick = (props: any) => {
+    // Знаходимо дані регіону в таблиці (Find region data from sheet)
     const regionData = sheetData.find((row) => row.region === props.NAME_1);
+
+    // Зберігаємо обраний регіон разом з його даними (Save selected region with its data)
     setSelectedRegion({
       ...props,
       total: regionData ? regionData.total : null,
     });
+
+    // Викликаємо функцію з пропсів для передачі регіону в батьківський компонент
+    // (Trigger callback to send region data to parent component)
     onRegionSelect(props);
   };
 
-  // Налаштування для кожного об'єкта на мапі
+  // Налаштування стилів і поведінки для кожного регіону карти
+  // (Configure style and events for each map feature)
   const onEachFeature = (feature: any, layer: any) => {
     const props = feature.properties;
     const regionName = props.NAME_1;
@@ -119,15 +93,17 @@ function Map({ onRegionSelect }: Props) {
     const total = regionInfo ? regionInfo.total : null;
     const value = regionInfo ? parseInt(regionInfo.total, 10) : 0;
 
+    // Визначення кольору заливки залежно від кількості (Determine fill color based on value)
     const colorIndex = getColorIndex(value, minValue, maxValue);
     const fillColor = getColorByIndex(colorIndex);
 
+    // Встановлюємо стиль шару (Set layer style)
     layer.setStyle({
       fillColor: regionInfo ? fillColor : "red",
       weight: 2,
     });
 
-    // Вміст тултіпа
+    // HTML для тултіпа при наведенні на регіон (Tooltip HTML when hovering)
     const tooltipContent = `
       <div class="info-card">
         <div class="info-header">
@@ -153,16 +129,18 @@ function Map({ onRegionSelect }: Props) {
       </div>
     `;
 
-    // Події миші
+    // Події миші для взаємодії з регіонами (Mouse events for region interaction)
     layer.on({
-      mouseover: (e: any) => e.target.setStyle({ fillOpacity: 0.5 }),
-      mouseout: (e: any) => e.target.setStyle({ fillOpacity: 1 }),
-      click: () => handeRegionClick(props),
+      mouseover: (e: any) => e.target.setStyle({ fillOpacity: 0.5 }), // Наведення — затемнення (Hover = change opacity)
+      mouseout: (e: any) => e.target.setStyle({ fillOpacity: 1 }),   // Вихід миші — повертає прозорість (Mouse out = restore)
+      click: () => handeRegionClick(props),                          // Клік — вибір регіону (Click = select region)
     });
 
+    // Прив’язуємо тултіп до шару (Bind tooltip to region layer)
     layer.bindTooltip(tooltipContent, { sticky: true });
   };
 
+  // Якщо дані ще не завантажені — показуємо "Loading..." (Show loading indicator)
   if (!sheetData || sheetData.length === 0) {
     return <div>Loading...</div>;
   }
@@ -176,6 +154,7 @@ function Map({ onRegionSelect }: Props) {
         display: "flex",
       }}
     >
+      {/* Контейнер карти (Main map container) */}
       <MapContainer
         center={position}
         zoom={6.7}
@@ -193,6 +172,7 @@ function Map({ onRegionSelect }: Props) {
         touchZoom={false}
         style={{ height: "100%", width: "100%", background: "transparent" }}
       >
+        {/* Відображення шарів GeoJSON (Display GeoJSON layers) */}
         <GeoJSON
           data={ukrGeoJSon as any}
           style={{
@@ -203,11 +183,13 @@ function Map({ onRegionSelect }: Props) {
           onEachFeature={onEachFeature}
         />
 
+        {/* Масштабна шкала у нижньому лівому куті (Scale bar at bottom-left corner) */}
         <div style={{ position: "absolute", bottom: "10%", left: "10%" }}>
           <ScaleBar scale={scale} />
         </div>
       </MapContainer>
 
+      {/* Бокова панель з інформацією про регіон (Sidebar with region info) */}
       <Sidebar
         region={selectedRegion}
         onClose={() => setSelectedRegion(null)}
@@ -217,3 +199,4 @@ function Map({ onRegionSelect }: Props) {
 }
 
 export default Map;
+// Експортуємо компонент карти (Export the Map component)
