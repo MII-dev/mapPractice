@@ -18,6 +18,42 @@ type SidebarProps = {
   onClose: () => void;   // Функція для закриття панелі
 };
 
+// Sparkline component to render a simple trend line
+const Sparkline: React.FC<{ data: any[], color?: string }> = ({ data, color = "#3b82f6" }) => {
+  if (!data || data.length < 2) return null;
+
+  const width = 100;
+  const height = 30;
+  const padding = 2;
+
+  const values = data.map(d => d.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const points = values.map((val, i) => {
+    const x = (i / (values.length - 1)) * (width - padding * 2) + padding;
+    const y = height - ((val - min) / range) * (height - padding * 2) - padding;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+      <svg width={width} height={height} style={{ overflow: "visible" }}>
+        <polyline
+          fill="none"
+          stroke={color}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={points}
+        />
+      </svg>
+      <span style={{ fontSize: "10px", color: "#64748b", fontWeight: 700, letterSpacing: "0.05em" }}>ТРЕНД (6 МІС.)</span>
+    </div>
+  );
+};
+
 // Компонент Sidebar (функціональний компонент React)
 const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
   // Стан, який керує анімацією появи/зникнення панелі
@@ -54,17 +90,20 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
       </button>
 
       <h2>{localRegion?.NAME_1}</h2>
-      <p style={{ color: "#64748b", fontSize: "0.875rem", marginBottom: "1.5rem", marginTop: "-1.5rem" }}>Статистика регіону</p>
+      <p className="sidebar-subtitle">Статистика регіону</p>
 
       <div className="sidebar-content">
-        <div className="sidebar-content-item main-value">
-          <label>{localRegion.label || "Кількість"}</label>
-          <div className="value-display">
-            <span className="number">
-              {localRegion.total !== null ? localRegion.total.toLocaleString() : "—"}
-            </span>
-            <span className="unit">{localRegion.suffix || ""}</span>
+        <div className="sidebar-content-item main-value" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <label>{localRegion.label || "Кількість"}</label>
+            <div className="value-display">
+              <span className="number">
+                {localRegion.total !== null ? localRegion.total.toLocaleString() : "—"}
+              </span>
+              <span className="unit">{localRegion.suffix || ""}</span>
+            </div>
           </div>
+          <Sparkline data={localRegion.history} color={localRegion.color} />
         </div>
 
         {localRegion.average && (
@@ -93,6 +132,20 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
                   style={{ width: `${(localRegion.total / localRegion.max) * 100}%` }}
                 ></div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {localRegion.allMetrics && localRegion.allMetrics.length > 0 && (
+          <div className="all-metrics-section">
+            <h3 className="section-title">Усі показники</h3>
+            <div className="metrics-grid">
+              {localRegion.allMetrics.map((m: any) => (
+                <div key={m.slug} className="metric-row">
+                  <label>{m.name}</label>
+                  <span>{m.value?.toLocaleString() || 0} <small>{m.suffix}</small></span>
+                </div>
+              ))}
             </div>
           </div>
         )}

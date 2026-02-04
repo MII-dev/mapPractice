@@ -65,12 +65,15 @@ app.get("/api/data/:layer_slug", async (req, res) => {
   const { layer_slug } = req.params;
   try {
     const query = `
-            SELECT r.name as region, COALESCE(rv.value, 0) as value, l.suffix
+            SELECT DISTINCT ON (r.name) 
+                r.name as region, 
+                COALESCE(rv.value, 0) as value, 
+                l.suffix
             FROM regions r
             CROSS JOIN layers l
             LEFT JOIN region_values rv ON rv.region_id = r.id AND rv.layer_id = l.id
             WHERE l.slug = $1
-            ORDER BY r.name
+            ORDER BY r.name, rv.period DESC NULLS LAST
         `;
     const result = await pool.query(query, [layer_slug]);
     res.json(result.rows);
@@ -80,9 +83,31 @@ app.get("/api/data/:layer_slug", async (req, res) => {
   }
 });
 
+// Get historical values for a region
+app.get("/api/history/:layer_slug/:region_name", async (req, res) => {
+  const { layer_slug, region_name } = req.params;
+  try {
+    const query = `
+            SELECT rv.value, rv.period
+            FROM region_values rv
+            JOIN layers l ON rv.layer_id = l.id
+            JOIN regions r ON rv.region_id = r.id
+            WHERE l.slug = $1 AND r.name = $2
+            ORDER BY rv.period ASC
+        `;
+    const result = await pool.query(query, [layer_slug, region_name]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 // Update data for a specific layer
 app.post("/api/data", async (req, res) => {
-  const { layer_slug, data } = req.body; // data: [{ region_name, value }]
+  const { layer_slug, data, period } = req.body; // data: [{ region_name, value }], period: 'YYYY-MM-DD' (optional)
+  const targetPeriod = period || new Date().toISOString().split('T')[0];
+
   try {
     const layerRes = await pool.query("SELECT id FROM layers WHERE slug = $1", [layer_slug]);
     if (layerRes.rows.length === 0) return res.status(404).json({ error: "Layer not found" });
@@ -93,12 +118,12 @@ app.post("/api/data", async (req, res) => {
       const regionRes = await pool.query("SELECT id FROM regions WHERE name = $1", [item.region_name]);
       if (regionRes.rows.length > 0) {
         const regionId = regionRes.rows[0].id;
-        await pool.query(
-          `INSERT INTO region_values (layer_id, region_id, value) 
-                     VALUES ($1, $2, $3)
-                     ON CONFLICT (layer_id, region_id) DO UPDATE SET value = $3`,
-          [layerId, regionId, parseInt(item.value, 10)]
-        );
+        const query = `INSERT INTO region_values (layer_id, region_id, value, period) 
+                     VALUES ($1, $2, $3, $4)
+                     ON CONFLICT (layer_id, region_id, period) DO UPDATE SET value = $3`;
+        const params = [layerId, regionId, parseInt(item.value, 10), targetPeriod];
+        console.log("Executing query:", query, params);
+        await pool.query(query, params);
       }
     }
     res.json({ success: true });

@@ -30,45 +30,182 @@ h3 {
 
 /* Reusable Info Card (Tooltip) */
 .info-card {
-    background: white;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border: 1.5px solid rgba(255, 255, 255, 0.7);
+    border-radius: 24px;
+    padding: 24px;
     color: var(--text-primary);
-    min-width: 160px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 280px;
+    box-shadow:
+        0 20px 40px -10px rgba(0, 0, 0, 0.15),
+        0 8px 16px -4px rgba(0, 0, 0, 0.08),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.5);
     font-family: 'Inter', sans-serif;
+    animation: premiumFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    pointer-events: none;
+    z-index: 10000;
 }
 
-.info-header {
+@keyframes premiumFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tooltip-header {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 6px;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.region-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.region-name-hero {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.2rem;
     font-weight: 700;
-    font-size: 0.95rem;
     color: var(--text-primary);
+    line-height: 1.2;
 }
 
-.info-row {
+.metric-hero {
+    background: rgba(15, 23, 42, 0.03);
+    border-radius: 12px;
+    padding: 12px;
     display: flex;
-    justify-content: space-between;
-    margin: 3px 0;
-    font-size: 0.85rem;
+    flex-direction: column;
+    border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
-.info-row span {
+.metric-hero-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.metric-hero-value-group {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.metric-hero-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent-color);
+    /* Dynamically overridden */
+    line-height: 1;
+}
+
+.metric-hero-suffix {
+    font-size: 1rem;
+    font-weight: 700;
     color: var(--text-secondary);
 }
 
-.info-row strong {
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.progress-track {
+    height: 6px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--accent-color);
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 0.9rem;
+    font-weight: 700;
     color: var(--text-primary);
 }
 
-hr {
-    border: none;
-    border-top: 1px solid var(--border-color);
-    margin: 6px 0;
+.comparison-tag {
+    align-self: flex-start;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.comparison-tag.plus {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.comparison-tag.minus {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* Custom Leaflet Tooltip Overrides */
+.leaflet-tooltip {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+    display: none !important;
 }
 
 /* Disable focus outline on Leaflet paths */

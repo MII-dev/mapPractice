@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { MapContainer, GeoJSON } from "react-leaflet";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { MapContainer, GeoJSON, useMap, ZoomControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import ukrGeoJSon from "./UKR_adm1.json";
 import { useMapData, MetricConfig, RegionData } from "./MapDataHook";
 import ScaleBar from "./ScaleBar";
 import Sidebar from "./MapSideBar";
 import LayerSwitcher from "./LayerSwitcher";
+import MapSearch from "./MapSearch";
 import L from "leaflet";
 import { generatePalette } from "../utils/colors";
+import "../App.css";
 
 type Props = {
   onRegionSelect: (props: any) => void;
@@ -16,9 +18,44 @@ type Props = {
 function Map({ onRegionSelect }: Props) {
   const [selectedRegion, setSelectedRegion] = useState<any>(null);
   const [activeMetric, setActiveMetric] = useState<MetricConfig | null>(null);
+  const geojsonRef = useRef<L.GeoJSON>(null);
+
+  const [focusedRegionName, setFocusedRegionName] = useState<string | null>(null);
 
   const position: [number, number] = [50.4501, 30.5234];
   const bounds = L.geoJSON(ukrGeoJSon as any).getBounds();
+
+  // Extract region names for search
+  const regionNames = useMemo(() => {
+    return (ukrGeoJSon as any).features.map((f: any) => f.properties.NAME_1);
+  }, []);
+
+  // Controller component to handle flyTo and bounds
+  const MapController = ({ focusRegion }: { focusRegion: string | null }) => {
+    const map = useMap();
+
+    useEffect(() => {
+      if (focusRegion === "-reset-") {
+        map.flyToBounds(bounds, { duration: 1.5 });
+        setSelectedRegion(null);
+        return;
+      }
+
+      if (focusRegion && geojsonRef.current) {
+        geojsonRef.current.eachLayer((layer: any) => {
+          if (layer.feature.properties.NAME_1 === focusRegion) {
+            const layerBounds = layer.getBounds();
+            map.flyToBounds(layerBounds, { padding: [50, 50], duration: 1.5 });
+
+            // Trigger visual selection
+            handleRegionClick(layer.feature.properties);
+          }
+        });
+      }
+    }, [focusRegion, map]);
+
+    return null;
+  };
 
   const { data: sheetData, metrics } = useMapData();
 
@@ -39,13 +76,22 @@ function Map({ onRegionSelect }: Props) {
     const average = activeValues.reduce((a, b) => a + b, 0) / activeValues.length;
     const max = Math.max(...activeValues);
 
+    // Calculate All Metrics for this region
+    const allMetricsData = metrics.map(m => ({
+      name: m.name,
+      value: regionData ? regionData[m.slug] : 0,
+      suffix: m.suffix,
+      slug: m.slug
+    }));
+
     if (selectedRegion.total !== newTotal || selectedRegion.average !== average) {
       setSelectedRegion((prev: any) => ({
         ...prev,
         total: newTotal,
         suffix: activeMetric.suffix,
         average: average,
-        max: max
+        max: max,
+        allMetrics: allMetricsData
       }));
     }
 
@@ -89,14 +135,32 @@ function Map({ onRegionSelect }: Props) {
     const average = activeValues.reduce((a, b) => a + b, 0) / activeValues.length;
     const max = Math.max(...activeValues);
 
-    setSelectedRegion({
-      ...props,
-      total: value,
-      suffix: activeMetric.suffix,
-      label: activeMetric.name,
-      average: average,
-      max: max
-    });
+    // Calculate All Metrics for this region
+    const allMetricsData = metrics.map(m => ({
+      name: m.name,
+      value: regionData ? regionData[m.slug] : 0,
+      suffix: m.suffix,
+      slug: m.slug
+    }));
+
+    // Fetch History for Trend Line
+    fetch(`/api/history/${activeMetric.slug}/${props.NAME_1}`)
+      .then(res => res.json())
+      .then(history => {
+        setSelectedRegion({
+          ...props,
+          total: value,
+          suffix: activeMetric.suffix,
+          label: activeMetric.name,
+          average: average,
+          max: max,
+          allMetrics: allMetricsData,
+          history: history,
+          color: activeMetric.color_theme
+        });
+      })
+      .catch(err => console.error("History fetch error:", err));
+
     onRegionSelect(props);
   };
 
@@ -113,14 +177,56 @@ function Map({ onRegionSelect }: Props) {
       fillOpacity: 1,
     });
 
-    // Tooltip content updated for active metric
+    // Calculation for Premium Tooltip Stats
+    const activeValues = sheetData.map(r => Number(r[activeMetric.slug]) || 0);
+    const avg = Math.round(activeValues.reduce((a, b) => a + b, 0) / (activeValues.length || 1));
+    const max = Math.max(...activeValues) || 1;
+    const val = value || 0;
+
+    const diff = val - avg;
+    const isHigher = diff > 0;
+    const percentVsAvg = Math.abs((diff / (avg || 1)) * 100).toFixed(0);
+    const percentOfMax = Math.min(100, Math.max(0, (val / max) * 100));
+
     const tooltipContent = `
-      <div class="info-card">
-        <div class="info-header"><span class="region">${props.NAME_1}</span></div>
-        <hr />
-        <div class="info-row">
-            <span>${activeMetric.name}:</span>
-            <strong>${regionInfo ? regionInfo[currentKey] : "0"} ${activeMetric.suffix}</strong>
+      <div class="info-card" style="border-left: 5px solid ${activeMetric.color_theme}">
+        <div class="tooltip-header">
+            <span class="region-label">Область</span>
+            <span class="region-name-hero">${props.NAME_1}</span>
+        </div>
+        
+        <div class="metric-hero">
+            <span class="metric-hero-label">${activeMetric.name}</span>
+            <div class="metric-hero-value-group">
+                <span class="metric-hero-value" style="color: ${activeMetric.color_theme}">${val.toLocaleString()}</span>
+                <span class="metric-hero-suffix">${activeMetric.suffix}</span>
+            </div>
+            
+            <div class="progress-container" style="margin-top: 12px;">
+                <div class="progress-header">
+                    <span>Від лідера</span>
+                    <span>${percentOfMax.toFixed(0)}%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-bar" style="width: ${percentOfMax}%; background: ${activeMetric.color_theme}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison-tag ${isHigher ? 'plus' : 'minus'}">
+            <span>${isHigher ? '↑' : '↓'}</span>
+            <span>${percentVsAvg}% ${isHigher ? 'вище' : 'нижче'} середнього</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Середнє</span>
+                <span class="stat-value">${avg.toLocaleString()} ${activeMetric.suffix}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Максимум</span>
+                <span class="stat-value">${max.toLocaleString()} ${activeMetric.suffix}</span>
+            </div>
         </div>
       </div>
     `;
@@ -162,6 +268,8 @@ function Map({ onRegionSelect }: Props) {
     layer.bindTooltip(tooltipContent, { sticky: true });
   };
 
+
+
   const geoKey = `${activeMetric.slug}:${sheetData.length}`; // Force re-render on metric change
 
   return (
@@ -172,12 +280,21 @@ function Map({ onRegionSelect }: Props) {
         onChange={setActiveMetric}
       />
 
+      <MapSearch
+        regions={regionNames}
+        onSelectRegion={(name) => setFocusedRegionName(name)}
+        onResetZoom={() => {
+          setFocusedRegionName("-reset-"); // Trigger reset
+          setTimeout(() => setFocusedRegionName(null), 100);
+        }}
+      />
+
       <MapContainer
         center={position}
         zoom={6.7}
         zoomSnap={0.1}
         zoomDelta={0.1}
-        scrollWheelZoom={false}
+        scrollWheelZoom={true}
         dragging={true}
         bounds={bounds}
         maxBounds={bounds}
@@ -189,10 +306,12 @@ function Map({ onRegionSelect }: Props) {
         touchZoom={false}
         style={{ height: "100%", width: "100%", background: "#f1f5f9" }}
       >
+        <MapController focusRegion={focusedRegionName} />
+        <ZoomControl position="topleft" />
         <GeoJSON
           key={geoKey}
           data={ukrGeoJSon as any}
-          style={{ transition: "none" }}
+          ref={geojsonRef as any}
           onEachFeature={onEachFeature}
         />
         <div style={{ position: "absolute", bottom: "10%", left: "10%" }}>

@@ -154,26 +154,42 @@ const AdminPage: React.FC = () => {
         }
     };
 
-    const handleImport = async () => {
-        if (!confirm("This will overwrite existing data for this layer with demo data. Continue?")) return;
+    const handleRandomFill = () => {
+        const randomValues = regionValues.map(r => ({
+            ...r,
+            value: Math.floor(Math.random() * 5000) + 500
+        }));
+        setRegionValues(randomValues);
+        setMessage("Generated random values! Don't forget to save.");
+    };
+
+    const handleGenerateHistory = async () => {
+        if (!selectedLayerSlug) return;
         setLoading(true);
         try {
-            const importData = await mockImportFromSheets(selectedLayerSlug);
-            // Set to state to allow review before saving, or save immediately?
-            // Let's save immediately for this demo
-            const payload = {
-                layer_slug: selectedLayerSlug,
-                data: importData
-            };
-            await fetch("/api/data", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            setMessage("Demo data imported! Refetching...");
+            // Generate data for last 6 months
+            const months = ['2023-08-01', '2023-09-01', '2023-10-01', '2023-11-01', '2023-12-01', '2024-01-01'];
+            for (const month of months) {
+                const payload = {
+                    layer_slug: selectedLayerSlug,
+                    data: regionValues.map(r => ({
+                        region_name: r.region,
+                        value: Math.floor(Math.random() * 5000) + 2000
+                    })),
+                    period: month // Backend needs to support this in the payload!
+                };
+                // We'll update backend to accept 'period' in /api/data
+                await fetch("/api/data", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+            }
+            setMessage("Historical data generated for 6 months!");
             fetchLayerData();
         } catch (e) {
             console.error(e);
+            setMessage("Error generating history");
         } finally {
             setLoading(false);
         }
@@ -271,6 +287,29 @@ const AdminPage: React.FC = () => {
                             </button>
                             {message && <p style={{ color: message.includes("Error") ? "red" : "green", marginTop: "10px" }}>{message}</p>}
                         </form>
+                        <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid #f1f5f9" }}>
+                            <button
+                                onClick={async () => {
+                                    const examples = [
+                                        { name: "Середня зарплата", slug: "avg_salary", color_theme: "#f59e0b", suffix: "грн" },
+                                        { name: "Кількість ВПО", slug: "vpo_count", color_theme: "#8b5cf6", suffix: "осіб" },
+                                        { name: "Гуманітарна допомога", slug: "human_aid", color_theme: "#ec4899", suffix: "тон" }
+                                    ];
+                                    for (const ex of examples) {
+                                        await fetch("/api/layers", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify(ex)
+                                        });
+                                    }
+                                    fetchLayers();
+                                    setMessage("Added 3 example layers!");
+                                }}
+                                style={{ background: "none", border: "1px dashed #cbd5e1", color: "#64748b", padding: "10px", width: "100%", borderRadius: "8px", cursor: "pointer", fontSize: "14px" }}
+                            >
+                                + Додати прикладні категорії (моки)
+                            </button>
+                        </div>
                     </div>
 
                     {/* Existing Layers List */}
@@ -316,10 +355,17 @@ const AdminPage: React.FC = () => {
                             </select>
                         </div>
                         <button
-                            onClick={handleImport}
+                            onClick={handleRandomFill}
                             style={{ padding: "12px 20px", background: "white", border: "1px solid #cbd5e1", borderRadius: "8px", fontWeight: 600, color: "#475569", cursor: "pointer", height: "45px" }}
                         >
-                            ⬇ Import Demo Data
+                            🎲 Randomize
+                        </button>
+                        <button
+                            onClick={handleGenerateHistory}
+                            disabled={loading}
+                            style={{ padding: "12px 20px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "8px", fontWeight: 600, color: "#475569", cursor: "pointer", height: "45px" }}
+                        >
+                            📈 Gen History
                         </button>
                         <button
                             onClick={handleDataSave}
