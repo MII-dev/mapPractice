@@ -1,57 +1,80 @@
 import React from "react";
+import { generatePalette } from "../utils/colors";
 
-// Масив кольорів для шкали (Colors used in the scale)
-const colors = [
-  // Можеш змінювати палітру залежно від стилю карти
-  "#f57a9a",
-  "#d66381",
-  "#b54a66",
-  "#96354e",
-  "#752137",
-  "#4f1121",
-];
+interface ScaleBarProps {
+  scale: number[];
+  title: string;
+  theme: string;
+}
 
-// Компонент ScaleBar приймає масив scale (ScaleBar component receives a scale array)
-const ScaleBar = ({ scale }) => {
-  // Якщо шкала порожня або менше 2 значень — нічого не рендеримо
+const ScaleBar: React.FC<ScaleBarProps> = ({ scale, title, theme }) => {
   if (!scale || scale.length < 2) return null;
 
-  return (
-    <div style={{ fontFamily: "sans-serif", fontSize: "14px" }}>
-      {/* Проходимо по шкалі і будуємо сегменти кольорів */}
-      {scale.slice(0, -1).map((from, i) => {
-        const to = scale[i + 1];                  // Наступне значення шкали
-        const color = colors[i % colors.length];  // Вибір кольору по індексу
+  const colors = generatePalette(theme, 6);
 
-        return (
+  return (
+    <div
+      style={{
+        fontFamily: "'Inter', sans-serif",
+        background: "white",
+        padding: "16px 20px",
+        borderRadius: "12px",
+        border: "1px solid #cbd5e1",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+        minWidth: "250px",
+      }}
+    >
+      {/* Title */}
+      <div
+        style={{
+          fontSize: "11px",
+          fontWeight: 600,
+          color: "#64748b",
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          marginBottom: "12px",
+        }}
+      >
+        {title}
+      </div>
+
+      {/* Gradient Bar */}
+      <div
+        style={{
+          display: "flex",
+          height: "10px",
+          borderRadius: "6px",
+          overflow: "hidden",
+          marginBottom: "8px",
+          border: "1px solid #e2e8f0",
+        }}
+      >
+        {colors.map((color, i) => (
           <div
             key={i}
             style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "6px", // Відстань між рядками шкали
+              flex: 1,
+              backgroundColor: color,
             }}
-          >
-            {/* Круглий колірний маркер */}
-            <span
-              style={{
-                display: "inline-block",
-                width: "14px",
-                height: "14px",
-                borderRadius: "50%",       // Робимо круг
-                backgroundColor: color,    // Колір сегменту
-                marginRight: "8px",        // Відстань до тексту
-                flexShrink: 0,             // Щоб коло не стискалось
-              }}
-            />
-            {/* Текстовий діапазон для цього кольору */}
-            <span>{`${from} - ${to}`} тис.</span>
-          </div>
-        );
-      })}
+          />
+        ))}
+      </div>
+
+      {/* Labels */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: "10px",
+          color: "#64748b",
+          fontWeight: 500,
+        }}
+      >
+        <span>{scale[0]}</span>
+        <span>{scale[scale.length - 1]}</span>
+      </div>
     </div>
   );
 };
 
-// Експортуємо компонент для використання на карті (Export component for map)
 export default ScaleBar;

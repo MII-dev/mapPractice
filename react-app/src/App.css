@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;800&display=swap');
+
+:root {
+    /* Professional Light Palette */
+    --bg-color: #f1f5f9;
+    --surface-color: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --accent-color: #2563eb;
+    --border-color: #cbd5e1;
+    --map-empty: #e2e8f0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: hidden;
+}
+
+h1,
+h2,
+h3 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Reusable Info Card (Tooltip) */
+.info-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--text-primary);
+    min-width: 160px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-family: 'Inter', sans-serif;
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 3px 0;
+    font-size: 0.85rem;
+}
+
+.info-row span {
+    color: var(--text-secondary);
+}
+
+.info-row strong {
+    color: var(--text-primary);
+}
+
+hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 6px 0;
+}
+
+/* Disable focus outline on Leaflet paths */
+.leaflet-interactive {
+    outline: none !important;
+}
+
+.leaflet-interactive:focus {
+    outline: none !important;
+}
+
+path.leaflet-interactive:focus {
+    outline: none !important;
+}
+
+/* Disable selection box */
+.leaflet-container {
+    outline: none !important;
+}
+
+.leaflet-container:focus {
+    outline: none !important;
+}
+
+/* Prevent any SVG focus styling */
+svg:focus,
+svg *:focus {
+    outline: none !important;
+}
+
+/* Aggressive cleanup for Leaflet focus */
+.leaflet-container :focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+path:focus {
+    outline: none !important;
+}
+
+g:focus {
+    outline: none !important;
+}

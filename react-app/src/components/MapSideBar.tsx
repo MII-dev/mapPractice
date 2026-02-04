@@ -49,26 +49,33 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
   // Основна розмітка панелі
   return (
     <div className={`sidebar ${isVisible ? "open" : ""}`}>
-      {/* Кнопка закриття */}
       <button className="close-btn" onClick={onClose}>
         ×
       </button>
 
-      {/* Назва області */}
       <h2>{localRegion?.NAME_1}</h2>
 
-      {/* Дані по ветеранах */}
-      <p>
-        <strong>Ветеранів:</strong> {localRegion?.total ?? "—"}
-      </p>
+      <div className="sidebar-content">
+        <div className="sidebar-content-item">
+          <label>{localRegion.label || "Кількість"}</label>
+          <span>
+            {localRegion.total !== null ? localRegion.total : "—"}{" "}
+            <small style={{ fontSize: "0.5em", color: "var(--text-secondary)" }}>
+              {localRegion.suffix || ""}
+            </small>
+          </span>
+        </div>
 
-      {/* Плейсхолдери для інших показників */}
-      <p>
-        <strong>Вакансій:</strong> 0
-      </p>
-      <p>
-        <strong>Рейтинг:</strong> —
-      </p>
+        <div className="sidebar-content-item">
+          <label>Вакансій</label>
+          <span>0</span>
+        </div>
+
+        <div className="sidebar-content-item">
+          <label>Рейтинг</label>
+          <span>—</span>
+        </div>
+      </div>
     </div>
   );
 };

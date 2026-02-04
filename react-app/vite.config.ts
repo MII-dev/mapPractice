@@ -6,6 +6,12 @@ export default defineConfig({
   base: "/mapPractice/",
   server: {
     host: true,
-    port: 5173
-  }
+    port: 5173,
+    proxy: {
+      "/api": {
+        target: "http://backend:3001",
+        changeOrigin: true,
+      },
+    },
+  },
 });
