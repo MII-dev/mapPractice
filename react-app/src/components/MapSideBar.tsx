@@ -54,27 +54,48 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
       </button>
 
       <h2>{localRegion?.NAME_1}</h2>
+      <p style={{ color: "#64748b", fontSize: "0.875rem", marginBottom: "1.5rem", marginTop: "-1.5rem" }}>Статистика регіону</p>
 
       <div className="sidebar-content">
-        <div className="sidebar-content-item">
+        <div className="sidebar-content-item main-value">
           <label>{localRegion.label || "Кількість"}</label>
-          <span>
-            {localRegion.total !== null ? localRegion.total : "—"}{" "}
-            <small style={{ fontSize: "0.5em", color: "var(--text-secondary)" }}>
-              {localRegion.suffix || ""}
-            </small>
-          </span>
+          <div className="value-display">
+            <span className="number">
+              {localRegion.total !== null ? localRegion.total.toLocaleString() : "—"}
+            </span>
+            <span className="unit">{localRegion.suffix || ""}</span>
+          </div>
         </div>
 
-        <div className="sidebar-content-item">
-          <label>Вакансій</label>
-          <span>0</span>
-        </div>
+        {localRegion.average && (
+          <div className="comparison-section">
+            <div className="comparison-row">
+              <label>Середнє по Україні</label>
+              <span>{Math.round(localRegion.average).toLocaleString()} {localRegion.suffix}</span>
+            </div>
 
-        <div className="sidebar-content-item">
-          <label>Рейтинг</label>
-          <span>—</span>
-        </div>
+            <div className="comparison-row">
+              <label>Відхилення</label>
+              <span className={`diff-badge ${localRegion.total >= localRegion.average ? 'positive' : 'negative'}`}>
+                {localRegion.total >= localRegion.average ? '+' : ''}
+                {Math.round(((localRegion.total - localRegion.average) / localRegion.average) * 100)}%
+              </span>
+            </div>
+
+            <div className="stat-bar-container">
+              <div className="stat-bar-label">
+                <span>Порівняння з макс. регіоном</span>
+                <span>{Math.round((localRegion.total / localRegion.max) * 100)}%</span>
+              </div>
+              <div className="stat-bar-bg">
+                <div
+                  className="stat-bar-fill"
+                  style={{ width: `${(localRegion.total / localRegion.max) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

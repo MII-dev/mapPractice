@@ -32,11 +32,21 @@ function Map({ onRegionSelect }: Props) {
   useEffect(() => {
     if (!selectedRegion || !activeMetric) return;
     const regionData = sheetData.find((r) => r.region === selectedRegion.NAME_1);
-    // Use the dynamic key from the active metric
     const newTotal = regionData ? regionData[activeMetric.slug] : null;
 
-    if (selectedRegion.total !== newTotal) {
-      setSelectedRegion((prev: any) => ({ ...prev, total: newTotal, suffix: activeMetric.suffix }));
+    // Calculate Global Stats for Comparison
+    const activeValues = sheetData.map(r => Number(r[activeMetric.slug]) || 0);
+    const average = activeValues.reduce((a, b) => a + b, 0) / activeValues.length;
+    const max = Math.max(...activeValues);
+
+    if (selectedRegion.total !== newTotal || selectedRegion.average !== average) {
+      setSelectedRegion((prev: any) => ({
+        ...prev,
+        total: newTotal,
+        suffix: activeMetric.suffix,
+        average: average,
+        max: max
+      }));
     }
 
   }, [sheetData, selectedRegion?.NAME_1, activeMetric]);
@@ -73,11 +83,19 @@ function Map({ onRegionSelect }: Props) {
   const handleRegionClick = (props: any) => {
     const regionData = sheetData.find((row) => row.region === props.NAME_1);
     const value = regionData ? regionData[currentKey] : null;
+
+    // Calculate Global Stats for Comparison
+    const activeValues = sheetData.map(r => Number(r[activeMetric.slug]) || 0);
+    const average = activeValues.reduce((a, b) => a + b, 0) / activeValues.length;
+    const max = Math.max(...activeValues);
+
     setSelectedRegion({
       ...props,
       total: value,
       suffix: activeMetric.suffix,
-      label: activeMetric.name
+      label: activeMetric.name,
+      average: average,
+      max: max
     });
     onRegionSelect(props);
   };

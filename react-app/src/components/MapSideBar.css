@@ -51,26 +51,85 @@
   gap: 1rem;
 }
 
-.sidebar-content-item {
-  padding: 1.25rem;
-  background: #f8fafc;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.sidebar-content-item.main-value {
+  background: white;
+  border: 1px solid #e2e8f0;
 }
 
-.sidebar-content-item label {
+.value-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.value-display .number {
+  font-size: 2.25rem;
+  letter-spacing: -0.025em;
+}
+
+.value-display .unit {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.comparison-section {
+  margin-top: 1rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.comparison-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9375rem;
+}
+
+.comparison-row label {
+  color: #64748b;
+}
+
+.diff-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.diff-badge.positive {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.diff-badge.negative {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.stat-bar-container {
+  margin-top: 0.5rem;
+}
+
+.stat-bar-label {
+  display: flex;
+  justify-content: space-between;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  color: #64748b;
+  margin-bottom: 0.5rem;
 }
 
-.sidebar-content-item span {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
+.stat-bar-bg {
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  background: var(--primary-color);
+  border-radius: 4px;
+  transition: width 0.6s ease-out;
 }
