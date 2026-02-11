@@ -8,13 +8,45 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Load environment variables (Note: docker-compose handles this, but for local dev verify process.env)
 const pool = new Pool({
   user: process.env.DB_USER || "postgres",
   host: process.env.DB_HOST || "localhost",
   database: process.env.DB_NAME || "map_data",
-  password: process.env.DB_PASSWORD || "Lambada",
+  password: process.env.DB_PASSWORD, // Must be set via env
   port: process.env.DB_PORT || 5432,
 });
+
+// Basic Auth Middleware
+const authMiddleware = (req, res, next) => {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    console.error("ADMIN_PASSWORD env variable is not set!");
+    return res.status(500).json({ error: "Server configuration error" });
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: "Authorization required" });
+  }
+
+  const [scheme, token] = authHeader.split(" ");
+  if (scheme !== "Basic" || !token) {
+    return res.status(401).json({ error: "Invalid authorization scheme" });
+  }
+
+  // Decode base64 credentials (username:password)
+  const credentials = Buffer.from(token, "base64").toString("utf-8");
+  const [username, password] = credentials.split(":");
+
+  // Simple password check (username ignored for now, could enforce 'admin')
+  if (password !== adminPassword) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  next();
+};
 
 // Initialize Database
 async function initDB() {
@@ -30,11 +62,62 @@ async function initDB() {
 // Run init on startup
 initDB();
 
-// --- API Endpoints ---
+
+// Verify Admin Credentials (Protected)
+app.get("/api/verify-admin", authMiddleware, (req, res) => {
+  res.json({ status: "ok" });
+});
+
+// --- AI Assistant Bridge (Gemini) ---
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : null;
+
+const SYSTEM_PROMPT = `
+Ти — Aura, інтелектуальна асистентка для веб-додатку "Інтерактивна Карта України".
+Твоя мета: допомагати користувачам аналізувати дані на карті, пояснювати статистику регіонів та відповідати на питання про Україну.
+
+Контекст додатка:
+- Карта відображає різні метрики (Ветеранська політика, Вакансії, Рейтинги тощо) по областях України.
+- Дані оновлюються в реальному часі адміністраторами.
+
+Твій стиль:
+- Дружній, професійний, лаконічний.
+- Спілкуйся українською мовою.
+- Якщо ти не маєш конкретних даних про певний регіон прямо зараз — відповідай загальну інформацію або спрямовуй користувача на вибір відповідної метрики в меню.
+
+Ти — частина преміального продукту. Твої відповіді мають бути чіткими та корисними.
+`;
+
+// POST /api/chat - Bridge to Gemini
+app.post("/api/chat", async (req, res) => {
+  const { message } = req.body;
+  console.log(`[AI Request]: ${message}`);
+
+  if (!model) {
+    return res.json({
+      response: "Я Aura! Вибачте, але мій 'мозок' (API Key) ще не налаштований. Будь ласка, додайте GEMINI_API_KEY в налаштування сервера. 🤖"
+    });
+  }
+
+  try {
+    const prompt = `${SYSTEM_PROMPT}\n\nКористувач запитує: ${message}`;
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+
+    res.json({ response: responseText });
+  } catch (err) {
+    console.error("Gemini API Error:", err);
+    res.status(500).json({
+      response: "Ой, щось пішло не так при спілкуванні з моїм ШІ-ядром. Спробуйте пізніше! 🔌"
+    });
+  }
+});
 
 // --- API Endpoints ---
 
-// Get all layers/metrics
+// Get all layers/metrics (Public)
 app.get("/api/layers", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM public.layers WHERE is_active = true ORDER BY id ASC");
@@ -45,8 +128,8 @@ app.get("/api/layers", async (req, res) => {
   }
 });
 
-// Create a new layer
-app.post("/api/layers", async (req, res) => {
+// Create a new layer (Protected)
+app.post("/api/layers", authMiddleware, async (req, res) => {
   const { name, slug, color_theme, suffix } = req.body;
   try {
     const result = await pool.query(
@@ -60,7 +143,7 @@ app.post("/api/layers", async (req, res) => {
   }
 });
 
-// Get data for a specific layer (Joined with Regions)
+// Get data for a specific layer (Public)
 app.get("/api/data/:layer_slug", async (req, res) => {
   const { layer_slug } = req.params;
   try {
@@ -83,7 +166,7 @@ app.get("/api/data/:layer_slug", async (req, res) => {
   }
 });
 
-// Get historical values for a region
+// Get historical values for a region (Public)
 app.get("/api/history/:layer_slug/:region_name", async (req, res) => {
   const { layer_slug, region_name } = req.params;
   try {
@@ -103,8 +186,8 @@ app.get("/api/history/:layer_slug/:region_name", async (req, res) => {
   }
 });
 
-// Update data for a specific layer
-app.post("/api/data", async (req, res) => {
+// Update data for a specific layer (Protected)
+app.post("/api/data", authMiddleware, async (req, res) => {
   const { layer_slug, data, period } = req.body; // data: [{ region_name, value }], period: 'YYYY-MM-DD' (optional)
   const targetPeriod = period || new Date().toISOString().split('T')[0];
 
@@ -133,25 +216,14 @@ app.post("/api/data", async (req, res) => {
   }
 });
 
-// Import from Sheets (Mocked for now, but structure ready)
-app.post("/api/import-sheets", async (req, res) => {
-  // In a real scenario, this would fetch from Google API using the key
-  // For now, we will simulate it or expect the frontend to send the parsed sheet data
-  // to avoid adding backend fetch logic duplication.
-  // Let's assume frontend sends the raw sheet data for simplicity.
+// Import from Sheets (Mocked) (Protected)
+app.post("/api/import-sheets", authMiddleware, async (req, res) => {
   const { layer_slug, sheet_data } = req.body;
-
-  // Calls the same logic as /api/data update
-  // This endpoint acts as a semantic alias for "importing"
-  try {
-    // Reuse logic from above (or just forward request internally)
-    // ... implementation identical to /api/data for now ...
-    res.json({ success: true, message: "Use /api/data for bulk updates" });
-  } catch (err) {
-    res.status(500).json({ error: "Import error" });
-  }
+  // Implementation logic skipped for brevity, reusing auth middleware
+  res.json({ success: true, message: "Use /api/data for bulk updates" });
 });
 
-app.listen(3001, () => {
-  console.log("Backend server running on http://localhost:3001");
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Backend server running on http://localhost:${PORT}`);
 });

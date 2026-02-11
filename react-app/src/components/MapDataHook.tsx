@@ -1,22 +1,8 @@
 import { useEffect, useState } from "react";
 
-export interface MetricConfig {
-  id: number;
-  name: string;
-  slug: string;
-  color_theme: string;
-  suffix: string;
-}
+import { MetricConfig, RegionData, MapData } from "../types";
 
-export interface RegionData {
-  region: string;
-  [key: string]: any;
-}
-
-export interface MapData {
-  data: RegionData[];
-  metrics: MetricConfig[];
-}
+export type { MetricConfig, RegionData, MapData };
 
 export function useMapData(): MapData {
   const [data, setData] = useState<RegionData[]>([]);
