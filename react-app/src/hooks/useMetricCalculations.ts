@@ -3,11 +3,11 @@ import { MetricConfig, RegionData } from "../types";
 import { generatePalette } from "../utils/colors";
 
 export function useMetricCalculations(
-    sheetData: RegionData[],
+    data: any[],
     activeMetric: MetricConfig | null
 ) {
     return useMemo(() => {
-        if (!sheetData.length || !activeMetric) {
+        if (!data.length || !activeMetric) {
             return {
                 activeValues: [],
                 average: 0,
@@ -21,19 +21,13 @@ export function useMetricCalculations(
         }
 
         const currentKey = activeMetric.slug;
-        const activeValues = sheetData.map((r) => Number(r[currentKey]) || 0);
+        const activeValues = data.map((r) => Number(r[currentKey]) || 0);
         const average =
             activeValues.reduce((a, b) => a + b, 0) / (activeValues.length || 1);
         const max = Math.max(...activeValues);
 
-        // For scale and colors
-        const values = sheetData.map((row) => {
-            const val = parseInt(row[currentKey], 10);
-            return Number.isNaN(val) ? 0 : val;
-        });
-
-        const minValue = Math.min(...values);
-        const maxValue = Math.max(...values);
+        const minValue = Math.min(...activeValues);
+        const maxValue = max;
         const levels = 6;
         const step = Math.floor((maxValue - minValue) / levels);
         const scale = Array.from(
@@ -47,7 +41,7 @@ export function useMetricCalculations(
         const getColorIndex = (value: number) => {
             if (isNaN(value)) return 1;
             if (maxValue === minValue) return Math.ceil(levels / 2);
-            const normalized = (value - minValue) / (maxValue - minValue);
+            const normalized = (value - minValue) / ((maxValue - minValue) || 1);
             const idx = Math.ceil(normalized * levels);
             return Math.min(Math.max(1, idx), levels);
         };
@@ -66,5 +60,5 @@ export function useMetricCalculations(
             getColorIndex,
             getColorByIndex,
         };
-    }, [sheetData, activeMetric]);
+    }, [data, activeMetric]);
 }

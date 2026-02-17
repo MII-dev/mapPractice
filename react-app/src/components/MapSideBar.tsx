@@ -1,14 +1,29 @@
 // Імпорт базових залежностей React
 import React, { useEffect, useState } from "react";
-// Імпорт стилів для карти (Leaflet)
-import "leaflet/dist/leaflet.css";
 // Імпорт локального CSS для бокової панелі
 import "./MapSideBar.css";
+// Імпорт компонента графіка
+import HistoryChart from "./HistoryChart";
 
 // Тип, що описує структуру даних про регіон
 type Region = {
   NAME_1: string;      // Назва області
-  total?: number;      // Кількість ветеранів (необов’язкове поле)
+  region: string;
+  total: number;
+  suffix: string;
+  label?: string;
+  average?: number;
+  max?: number;
+  color?: string;
+  history?: any[];
+  allMetrics?: {
+    name: string;
+    value: number;
+    suffix: string;
+    color: string;
+  }[];
+  isRaion?: boolean; // Додано для визначення, чи це район
+  childRaions?: string[]; // Додано для списку районів
   [key: string]: any;  // Дозволяє інші довільні властивості
 };
 
@@ -16,6 +31,7 @@ type Region = {
 type SidebarProps = {
   region: Region | null; // Поточний вибраний регіон або null
   onClose: () => void;   // Функція для закриття панелі
+  onRaionSelect?: (name: string) => void; // Додано для навігації
 };
 
 // Sparkline component to render a simple trend line
@@ -55,7 +71,7 @@ const Sparkline: React.FC<{ data: any[], color?: string }> = ({ data, color = "#
 };
 
 // Компонент Sidebar (функціональний компонент React)
-const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ region, onClose, onRaionSelect }) => {
   // Стан, який керує анімацією появи/зникнення панелі
   const [isVisible, setIsVisible] = useState(false);
 
@@ -90,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
       </button>
 
       <h2>{localRegion?.NAME_1}</h2>
-      <p className="sidebar-subtitle">Статистика регіону</p>
+      <p className="sidebar-subtitle">{localRegion.isRaion ? "Детальна інформація про район" : "Статистика регіону"}</p>
 
       <div className="sidebar-content">
         <div className="sidebar-content-item main-value" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -98,7 +114,7 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
             <label>{localRegion.label || "Кількість"}</label>
             <div className="value-display">
               <span className="number">
-                {localRegion.total !== null ? localRegion.total.toLocaleString() : "—"}
+                {(localRegion.total !== null && localRegion.total !== undefined) ? localRegion.total.toLocaleString() : "—"}
               </span>
               <span className="unit">{localRegion.suffix || ""}</span>
             </div>
@@ -106,7 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
           <Sparkline data={localRegion.history} color={localRegion.color} />
         </div>
 
-        {localRegion.average && (
+        {!localRegion.isRaion && localRegion.average && (
           <div className="comparison-section">
             <div className="comparison-row">
               <label>Середнє по Україні</label>
@@ -120,7 +136,6 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
                 {Math.round(((localRegion.total - localRegion.average) / localRegion.average) * 100)}%
               </span>
             </div>
-
             <div className="stat-bar-container">
               <div className="stat-bar-label">
                 <span>Порівняння з макс. регіоном</span>
@@ -129,14 +144,69 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose }) => {
               <div className="stat-bar-bg">
                 <div
                   className="stat-bar-fill"
-                  style={{ width: `${(localRegion.total / localRegion.max) * 100}%` }}
+                  style={{ width: `${(localRegion.total / localRegion.max) * 100}%`, background: localRegion.color }}
                 ></div>
               </div>
             </div>
           </div>
         )}
 
-        {localRegion.allMetrics && localRegion.allMetrics.length > 0 && (
+        {/* Райони області (Drill-down) */}
+        {!localRegion.isRaion && localRegion.childRaions && localRegion.childRaions.length > 0 && (
+          <div className="metrics-section">
+            <div className="section-header">
+              <span className="section-icon">📑</span>
+              <h3>Райони області</h3>
+            </div>
+            <div className="raion-list-grid">
+              {localRegion.childRaions
+                .sort((a: any, b: any) => b.value - a.value) // Sort by value desc
+                .map((item: any) => (
+                  <button
+                    key={item.name}
+                    className="raion-pill-btn"
+                    onClick={() => onRaionSelect && onRaionSelect(item.name)}
+                  >
+                    <div className="raion-pill-content">
+                      <span className="raion-name">{item.name.replace(' район', '')}</span>
+                      <span className="raion-value-pill">{item.value.toLocaleString()}</span>
+                    </div>
+                    <span className="pill-icon">📍</span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Raion Specific Real Metrics */}
+        {localRegion.isRaion && localRegion.allMetrics && (
+          <div className="metrics-section">
+            <div className="section-header">
+              <span className="section-icon">📊</span>
+              <h3>Основні показники</h3>
+            </div>
+            <div className="placeholder-stats-grid">
+              {localRegion.allMetrics.map((m: any) => (
+                <div className="p-stat-card" key={m.slug}>
+                  <span className="p-icon">📈</span>
+                  <div className="p-details">
+                    <span className="p-label">{m.name}</span>
+                    <span className="p-value">{m.value.toLocaleString()} {m.suffix}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {localRegion.history && localRegion.history.length > 0 && (
+          <div className="history-chart-section" style={{ marginTop: '1rem' }}>
+            <h3 className="section-title">Динаміка змін</h3>
+            <HistoryChart data={localRegion.history} color={localRegion.color} />
+          </div>
+        )}
+
+        {!localRegion.isRaion && localRegion.allMetrics && localRegion.allMetrics.length > 0 && (
           <div className="all-metrics-section">
             <h3 className="section-title">Усі показники</h3>
             <div className="metrics-grid">

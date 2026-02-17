@@ -13,5 +13,6 @@ export interface RegionData {
 
 export interface MapData {
     data: RegionData[];
+    raionData: any[];
     metrics: MetricConfig[];
 }

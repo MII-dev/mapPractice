@@ -3,13 +3,15 @@ import './MapSearch.css';
 
 interface MapSearchProps {
     regions: string[];
+    raions: string[];
     onSelectRegion: (regionName: string) => void;
+    onSelectRaion: (raionName: string) => void;
     onResetZoom: () => void;
 }
 
-const MapSearch: React.FC<MapSearchProps> = ({ regions, onSelectRegion, onResetZoom }) => {
+const MapSearch: React.FC<MapSearchProps> = ({ regions, raions, onSelectRegion, onSelectRaion, onResetZoom }) => {
     const [query, setQuery] = useState('');
-    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [suggestions, setSuggestions] = useState<{ name: string, type: 'oblast' | 'raion' }[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -29,10 +31,17 @@ const MapSearch: React.FC<MapSearchProps> = ({ regions, onSelectRegion, onResetZ
         setQuery(value);
 
         if (value.length > 1) {
-            const filtered = regions.filter(r =>
-                r.toLowerCase().includes(value.toLowerCase())
-            ).slice(0, 5);
-            setSuggestions(filtered);
+            const filteredOblasts = regions
+                .filter(r => r.toLowerCase().includes(value.toLowerCase()))
+                .slice(0, 3)
+                .map(r => ({ name: r, type: 'oblast' as const }));
+
+            const filteredRaions = raions
+                .filter(r => r.toLowerCase().includes(value.toLowerCase()))
+                .slice(0, 5)
+                .map(r => ({ name: r, type: 'raion' as const }));
+
+            setSuggestions([...filteredOblasts, ...filteredRaions]);
             setIsOpen(true);
         } else {
             setSuggestions([]);
@@ -40,10 +49,14 @@ const MapSearch: React.FC<MapSearchProps> = ({ regions, onSelectRegion, onResetZ
         }
     };
 
-    const handleSelect = (region: string) => {
-        setQuery(region);
+    const handleSelect = (item: { name: string, type: 'oblast' | 'raion' }) => {
+        setQuery(item.name);
         setIsOpen(false);
-        onSelectRegion(region);
+        if (item.type === 'oblast') {
+            onSelectRegion(item.name);
+        } else {
+            onSelectRaion(item.name);
+        }
     };
 
     return (
@@ -72,8 +85,11 @@ const MapSearch: React.FC<MapSearchProps> = ({ regions, onSelectRegion, onResetZ
                 {isOpen && suggestions.length > 0 && (
                     <div className="suggestions-dropdown">
                         {suggestions.map((s, i) => (
-                            <div key={i} className="suggestion-item" onClick={() => handleSelect(s)}>
-                                {s}
+                            <div key={i} className="suggestion-item" onClick={() => handleSelect(s)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>{s.name}</span>
+                                <span style={{ fontSize: '10px', background: s.type === 'oblast' ? '#3b82f6' : '#94a3b8', color: 'white', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>
+                                    {s.type === 'oblast' ? 'обл.' : 'р-н'}
+                                </span>
                             </div>
                         ))}
                     </div>

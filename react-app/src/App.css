@@ -362,3 +362,50 @@ g:focus {
         transform: scale(1);
     }
 }
+
+/* --- Advanced Raion Features --- */
+
+.raion-label-container {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.raion-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: #475569;
+    text-shadow:
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    white-space: nowrap;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+@keyframes pulse-border {
+    0% {
+        stroke-width: 2;
+        stroke-opacity: 0.8;
+    }
+
+    50% {
+        stroke-width: 4;
+        stroke-opacity: 0.4;
+    }
+
+    100% {
+        stroke-width: 2;
+        stroke-opacity: 0.8;
+    }
+}
+
+.pulse-selected {
+    animation: pulse-border 2s infinite ease-in-out;
+}

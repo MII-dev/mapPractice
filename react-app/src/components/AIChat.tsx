@@ -75,7 +75,7 @@ const AIChat: React.FC = () => {
                     {/* Header */}
                     <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%', boxShadow: '0 0 10px #10b981' }}></div>
-                        <span style={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', letterSpacing: '0.5px' }}>AURA ASSISTANT</span>
+                        <span style={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', letterSpacing: '0.5px' }}>АСИСТЕНТКА AURA</span>
                     </div>
 
                     {/* Messages Area */}

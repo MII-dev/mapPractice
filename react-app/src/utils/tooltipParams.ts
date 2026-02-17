@@ -61,3 +61,29 @@ export const buildTooltipContent = (
       </div>
     `;
 };
+
+export const buildRaionTooltipContent = (
+    props: any,
+    value: number,
+    activeMetric: MetricConfig
+): string => {
+    const val = value || 0;
+    return `
+      <div class="info-card raion-card" style="border-left: 5px solid ${activeMetric.color_theme}; backdrop-filter: blur(8px); background: rgba(255, 255, 255, 0.7);">
+        <div class="tooltip-header">
+            <span class="region-label">Район</span>
+            <span class="region-name-hero">${props.rayon}</span>
+        </div>
+        <div class="metric-hero">
+            <span class="metric-hero-label">${activeMetric.name}</span>
+            <div class="metric-hero-value-group">
+                <span class="metric-hero-value" style="color: ${activeMetric.color_theme}">${val.toLocaleString()}</span>
+                <span class="metric-hero-suffix">${activeMetric.suffix}</span>
+            </div>
+            <p style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">
+                Область: ${props.parent_oblast}
+            </p>
+        </div>
+      </div>
+    `;
+};

@@ -216,3 +216,138 @@
   font-weight: 500;
   color: #64748b;
 }
+
+/* --- Raion Drill-down & Placeholder UI --- */
+
+.metrics-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: #475569;
+}
+
+.section-header h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.raion-list-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.raion-pill-btn {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.raion-pill-btn:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+  color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.raion-pill-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.raion-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.raion-value-pill {
+  font-weight: 800;
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
+.pill-icon {
+  font-size: 0.8rem;
+  opacity: 0.5;
+  margin-left: auto;
+}
+
+.placeholder-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.p-stat-card {
+  background: white;
+  padding: 1.25rem 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+}
+
+.p-icon {
+  font-size: 1.5rem;
+}
+
+.p-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.p-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.p-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.info-banner {
+  margin-top: 1.25rem;
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  padding: 12px 16px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: #0369a1;
+  font-weight: 600;
+  line-height: 1.4;
+}

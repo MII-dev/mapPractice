@@ -1,35 +1,43 @@
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
+import raionGeoJSon from "./UKR_adm2.json";
 
-interface MapControllerProps {
+interface Props {
     focusRegion: string | null;
     bounds: L.LatLngBounds;
-    geojsonRef: React.MutableRefObject<L.GeoJSON | null>;
-    onFlyToComplete?: () => void;
-    // Callback to trigger visual selection if needed
+    geojsonRef: React.RefObject<L.GeoJSON>;
+    onReset: () => void;
     onRegionFound?: (props: any) => void;
-    onReset?: () => void;
+    onFocusComplete?: () => void;
 }
 
-const MapController: React.FC<MapControllerProps> = ({
-    focusRegion,
-    bounds,
-    geojsonRef,
-    onRegionFound,
-    onReset
-}) => {
+const MapController = ({ focusRegion, bounds, geojsonRef, onReset, onRegionFound, onFocusComplete }: Props) => {
     const map = useMap();
 
     useEffect(() => {
+        if (!focusRegion) return;
+
         if (focusRegion === "-reset-") {
-            map.flyToBounds(bounds, { duration: 1.5 });
-            if (onReset) onReset();
+            map.fitBounds(bounds, { padding: [20, 20], duration: 1.5 });
+            onReset();
             return;
         }
 
-        if (focusRegion && geojsonRef.current) {
-            // Find the layer corresponding to the region
+        if (focusRegion.startsWith("raion:")) {
+            const raionName = focusRegion.replace("raion:", "");
+            const feature = (raionGeoJSon as any).features.find((f: any) => f.properties.rayon === raionName);
+            if (feature) {
+                const raionLayer = L.geoJSON(feature);
+                map.fitBounds(raionLayer.getBounds(), { padding: [50, 50], duration: 1.2, maxZoom: 10 });
+                if (onFocusComplete) {
+                    onFocusComplete();
+                }
+            }
+            return;
+        }
+
+        if (geojsonRef.current) {
             geojsonRef.current.eachLayer((layer: any) => {
                 if (layer.feature?.properties?.NAME_1 === focusRegion) {
                     const layerBounds = layer.getBounds();
@@ -37,6 +45,9 @@ const MapController: React.FC<MapControllerProps> = ({
 
                     if (onRegionFound) {
                         onRegionFound(layer.feature.properties);
+                    }
+                    if (onFocusComplete) {
+                        onFocusComplete();
                     }
                 }
             });

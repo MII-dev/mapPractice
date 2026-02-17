@@ -4,9 +4,11 @@ import { MetricConfig, RegionData, MapData } from "../types";
 
 export type { MetricConfig, RegionData, MapData };
 
-export function useMapData(): MapData {
+export function useMapData(selectedDate: string | null): MapData & { availableDates: string[] } {
   const [data, setData] = useState<RegionData[]>([]);
+  const [raionData, setRaionData] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<MetricConfig[]>([]);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -19,15 +21,27 @@ export function useMapData(): MapData {
         const layers: MetricConfig[] = await layersRes.json();
         setMetrics(layers);
 
-        // 2. Fetch Data for each layer
-        // We will build a unified object where key = region name
-        const combinedData: Record<string, RegionData> = {};
+        if (layers.length > 0) {
+          // Fetch available dates for the first layer
+          try {
+            const datesRes = await fetch(`/api/periods/${layers[0].slug}`, { signal: controller.signal });
+            if (datesRes.ok) {
+              const dates = await datesRes.json();
+              setAvailableDates(dates);
+            }
+          } catch (e) {
+            console.error("Failed to fetch dates", e);
+          }
+        }
 
-        // Initialize with default regions if needed or rely on first response
-        // Better: Fetch all layer data in parallel
+        // 2. Fetch Oblast Data
+        const combinedData: Record<string, RegionData> = {};
         await Promise.all(layers.map(async (layer) => {
           try {
-            const res = await fetch(`/api/data/${layer.slug}`, { signal: controller.signal });
+            const url = selectedDate
+              ? `/api/data/${layer.slug}?period=${selectedDate}`
+              : `/api/data/${layer.slug}`;
+            const res = await fetch(url, { signal: controller.signal });
             if (res.ok) {
               const values = await res.json();
               values.forEach((item: any) => {
@@ -38,11 +52,33 @@ export function useMapData(): MapData {
               });
             }
           } catch (e) {
-            console.error(`Failed to fetch data for ${layer.slug}`, e);
+            console.error(`Failed to fetch oblast data for ${layer.slug}`, e);
           }
         }));
-
         setData(Object.values(combinedData));
+
+        // 3. Fetch Raion Data
+        const combinedRaionData: Record<string, any> = {};
+        await Promise.all(layers.map(async (layer) => {
+          try {
+            const url = selectedDate
+              ? `/api/raion-data/${layer.slug}?period=${selectedDate}`
+              : `/api/raion-data/${layer.slug}`;
+            const res = await fetch(url, { signal: controller.signal });
+            if (res.ok) {
+              const values = await res.json();
+              values.forEach((item: any) => {
+                if (!combinedRaionData[item.raion]) {
+                  combinedRaionData[item.raion] = { raion: item.raion, parent_oblast: item.parent_oblast };
+                }
+                combinedRaionData[item.raion][layer.slug] = item.value;
+              });
+            }
+          } catch (e) {
+            console.error(`Failed to fetch raion data for ${layer.slug}`, e);
+          }
+        }));
+        setRaionData(Object.values(combinedRaionData));
 
       } catch (err: any) {
         if (err.name !== "AbortError") console.error("Fetch error:", err);
@@ -50,14 +86,13 @@ export function useMapData(): MapData {
     }
 
     fetchData();
-    // Poll every 10 seconds to keep data fresh from Admin Panel
-    const intervalId = setInterval(fetchData, 10000);
+    const intervalId = setInterval(fetchData, 15000); // 15s polling
 
     return () => {
       controller.abort();
       clearInterval(intervalId);
     };
-  }, []);
+  }, [selectedDate]); // Add selectedDate as dependency
 
-  return { data, metrics };
+  return { data, raionData, metrics, availableDates };
 }
