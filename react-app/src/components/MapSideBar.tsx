@@ -34,37 +34,14 @@ type SidebarProps = {
   onRaionSelect?: (name: string) => void; // Додано для навігації
 };
 
-// Sparkline component to render a simple trend line
-const Sparkline: React.FC<{ data: any[], color?: string }> = ({ data, color = "#3b82f6" }) => {
+import Sparkline from "./ui/Sparkline";
+
+// Sidebar-specific sparkline wrapper with label
+const SidebarSparkline: React.FC<{ data: any[]; color?: string }> = ({ data, color }) => {
   if (!data || data.length < 2) return null;
-
-  const width = 100;
-  const height = 30;
-  const padding = 2;
-
-  const values = data.map(d => d.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-
-  const points = values.map((val, i) => {
-    const x = (i / (values.length - 1)) * (width - padding * 2) + padding;
-    const y = height - ((val - min) / range) * (height - padding * 2) - padding;
-    return `${x},${y}`;
-  }).join(" ");
-
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-      <svg width={width} height={height} style={{ overflow: "visible" }}>
-        <polyline
-          fill="none"
-          stroke={color}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          points={points}
-        />
-      </svg>
+      <Sparkline data={data} color={color} />
       <span style={{ fontSize: "10px", color: "#64748b", fontWeight: 700, letterSpacing: "0.05em" }}>ТРЕНД (6 МІС.)</span>
     </div>
   );
@@ -119,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ region, onClose, onRaionSelect }) => 
               <span className="unit">{localRegion.suffix || ""}</span>
             </div>
           </div>
-          <Sparkline data={localRegion.history} color={localRegion.color} />
+          <SidebarSparkline data={localRegion.history} color={localRegion.color} />
         </div>
 
         {!localRegion.isRaion && localRegion.average && (
